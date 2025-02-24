@@ -1,10 +1,12 @@
-let board = document.querySelector('.board');
-let restartButton = document.querySelector('.js-restart-button');
+const board = document.querySelector('.board');
+let cells; // This will be updated when board is initialized
+const restartButton = document.querySelector('.js-restart-button');
+let playerSymbol;
+let computerSymbol;
 
 let currentPlayer;
 
 function initializeBoard() {
-
     if (!board) {
         console.error('Error: Board element not found!');
         return;
@@ -19,6 +21,9 @@ function initializeBoard() {
         board.appendChild(cell);
     }
 
+    // Update cells reference after creating new cells
+    cells = document.querySelectorAll('.cell');
+    
     currentPlayer = localStorage.getItem('playerChoice') || 'X';
 
     setUpEventListeners();
@@ -30,7 +35,7 @@ function initializeBoard() {
 }
 
 function setUpEventListeners() {
-    document.querySelectorAll('.cell').forEach(cell => {
+    cells.forEach(cell => {
         cell.addEventListener('click', () => handleMove(cell));
     });
 }
@@ -40,15 +45,17 @@ function handleMove(cell) {
 
     cell.textContent = currentPlayer;
 
-    if (checkWinner()) {
-        return;
-    };
+    if (checkForWinner()) return;
 
     switchTurn();
+
+    if(currentPlayer === computerSymbol) {
+        setTimeout(computerMove, 500);
+    }
 }
 
 function switchTurn() {
-    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    currentPlayer = (currentPlayer === 'X') ? 'O' : 'X';
 }
 
 function startGame() {
@@ -72,7 +79,6 @@ function resetGame(){
     }); 
 }
 
-
 function playerChoice() {
     let container = document.querySelector('.js-choose-container');
 
@@ -89,7 +95,10 @@ function playerChoice() {
     let oButton = document.querySelector('.js-o-button');
 
     function handleChoice(choice) {
-        localStorage.setItem('playerChoice', choice);
+        playerSymbol = choice;
+        computerSymbol = (choice === 'X') ? 'O' : 'X';
+
+        localStorage.setItem('playerChoice', playerSymbol);
         container.classList.add('hidden');
         initializeBoard();
     }
@@ -98,8 +107,28 @@ function playerChoice() {
     oButton.addEventListener('click', () => handleChoice('O'));
 }
 
-function checkWinner() {
-    const cells = document.querySelectorAll('.cell');
+// This is our UI checker - shows messages and disables board
+function checkForWinner() {
+    const winner = getWinner();
+    
+    if (winner) {
+        displayMessage(`winner is ${winner}`);
+        disableBoard();
+        return true;
+    }
+
+    let isDraw = [...cells].every(cell => cell.textContent !== '');
+    if (isDraw) {
+        displayMessage(`It is a draw`);
+        disableBoard();
+        return true;
+    }
+    
+    return false;
+}
+
+// This is our logical checker - returns the winner symbol or null
+function getWinner() {
     const winningCombinations = [
         [0,1,2],[3,4,5],[6,7,8],
         [0,3,6],[1,4,7],[2,5,8],
@@ -114,18 +143,11 @@ function checkWinner() {
         let cellC = cells[c].textContent;
 
         if (cellA !== '' && cellA === cellB && cellB === cellC) {
-            displayMessage(`winner is ${cellA}`);
-            disableBoard();
-            return true;
-        }
-
-        let isDraw = [...cells].every(cell => cell.textContent !== '');
-        if (isDraw) {
-            displayMessage(`It is a draw`);
-            disableBoard();
+            return cellA;
         }
     }
-    return false;
+    
+    return null;
 }
 
 function displayMessage(message) {
@@ -141,9 +163,96 @@ function displayMessage(message) {
 }
 
 function disableBoard() {
-    document.querySelectorAll('.cell').forEach(cell => {
+    cells.forEach(cell => {
         cell.style.pointerEvents = 'none';
     });
+}
+
+function minimax(board, depth, isMaximizing) {
+    // Check if there's a winner
+    const winner = checkWinnerForMinimax(board);
+    
+    if (winner === computerSymbol) return 10 - depth;
+    if (winner === playerSymbol) return depth - 10;
+    
+    // Check for a tie
+    if (!board.includes('')) return 0;
+    
+    if (isMaximizing) {
+        let bestScore = -Infinity;
+        for (let i = 0; i < board.length; i++) {
+            if (board[i] === '') {
+                board[i] = computerSymbol;
+                let score = minimax(board, depth + 1, false);
+                board[i] = '';
+                bestScore = Math.max(score, bestScore);
+            }
+        }
+        return bestScore;
+    } else {
+        let bestScore = Infinity;
+        for (let i = 0; i < board.length; i++) {
+            if (board[i] === '') {
+                board[i] = playerSymbol;
+                let score = minimax(board, depth + 1, true);
+                board[i] = '';
+                bestScore = Math.min(score, bestScore);
+            }
+        }
+        return bestScore;
+    }
+}
+
+function checkWinnerForMinimax(board) {
+    const winningCombinations = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+    ];
+
+    for (let combination of winningCombinations) {
+        let [a, b, c] = combination;
+
+        if (board[a] !== '' && board[a] === board[b] && board[b] === board[c]) {
+            return board[a];
+        }
+    }
+    
+    return null;
+}
+
+function computerMove() {
+    let bestScore = -Infinity;
+    let bestMove = null;
+
+    // Create a copy of the current board state
+    let boardArray = Array(9).fill('');
+    cells.forEach((cell, index) => {
+        boardArray[index] = cell.textContent;
+    });
+
+    // Find the best move
+    for (let i = 0; i < boardArray.length; i++) {
+        if (boardArray[i] === '') {
+            boardArray[i] = computerSymbol;
+            let score = minimax(boardArray, 0, false);
+            boardArray[i] = '';
+            
+            if (score > bestScore) {
+                bestScore = score;
+                bestMove = i;
+            }
+        }
+    }
+
+    if (bestMove !== null) {
+        let selectedCell = cells[bestMove];
+        selectedCell.textContent = computerSymbol;
+
+        if (checkForWinner()) return;
+
+        switchTurn();
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
