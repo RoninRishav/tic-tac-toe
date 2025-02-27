@@ -6,6 +6,65 @@ let computerSymbol;
 
 let currentPlayer;
 
+let playerScore = 0;
+let computerScore = 0;
+let ties = 0;
+
+let gameDifficulty = 'medium';
+
+function initializeScoreBoard() {
+    let scoreBoardContainer = document.querySelector('.score-board-container');
+
+    if(scoreBoardContainer) {
+        const playerLabel = document.querySelector('.player-score .score-label');
+        const computerLabel = document.querySelector('.computer-score .score-label');
+
+        if(playerLabel && computerLabel) {
+            playerLabel.textContent = `Player (${playerSymbol || 'X'})`;
+            computerLabel.textContent = `Computer (${computerSymbol || 'O'})`;
+        }
+        return;
+    }
+    
+    scoreBoardContainer = document.createElement('div');
+    scoreBoardContainer.classList.add('score-board-container');
+
+    scoreBoardContainer.innerHTML = `
+        <div class="player-score">
+            <span class="score-label">Player (${playerSymbol || 'X'})</span>
+            <span class="score-value" id="player-score">0</span>
+        </div>
+        <div class="ties">
+            <span class="score-label">Ties</span>
+            <span class="score-value" id="ties-score">0</span>
+        </div>
+        <div class="computer-score">
+            <span class="score-label">Computer (${computerSymbol || 'O'})</span>
+            <span class="score-value" id="computer-score">0</span>
+        </div>`;
+
+    if(board && board.parentNode) {
+        board.parentNode.insertBefore(scoreBoardContainer, board);
+    } else {
+        document.body.appendChild(scoreBoardContainer);
+    }
+}
+
+function updateScore(winner) {
+    let tiesScore = parseInt(document.querySelector('#ties-score').textContent);
+
+    if(winner === playerSymbol) {
+        playerScore++;
+        document.querySelector('#player-score').textContent = playerScore;
+    } else if(winner === computerSymbol) {
+        computerScore++;
+        document.querySelector('#computer-score').textContent = computerScore;
+    } else {
+        tiesScore++;
+        document.querySelector('#ties-score').textContent = tiesScore;
+    }
+}
+
 function initializeBoard() {
     if (!board) {
         console.error('Error: Board element not found!');
@@ -20,6 +79,8 @@ function initializeBoard() {
         cell.dataset.index = i;
         board.appendChild(cell);
     }
+
+    initializeScoreBoard();
 
     // Update cells reference after creating new cells
     cells = document.querySelectorAll('.cell');
@@ -86,13 +147,22 @@ function playerChoice() {
         <p class="ask-player">Choose Between X or O</p>
         <button class="x-button js-x-button">X</button>
         <button class="o-button js-o-button">O</button>
-    `;
+
+        <p class="ask-player">Choose Difficulty</p>
+        <button class="difficulty-button js-easy-button">Easy</button>
+        <button class="difficulty-button js-medium-button">Medium</button>
+        <button class="difficulty-button js-hard-button">Hard</button>    
+        `;
 
     container.innerHTML = html;
     container.classList.remove('hidden');
 
     let xButton = document.querySelector('.js-x-button');
     let oButton = document.querySelector('.js-o-button');
+
+    let easyButton = document.querySelector('.js-easy-button');
+    let mediumButton = document.querSelector('.js-medium-button');
+    let hardButton = doccument.querSelector('.js-hard-button');
 
     function handleChoice(choice) {
         playerSymbol = choice;
@@ -105,6 +175,10 @@ function playerChoice() {
 
     xButton.addEventListener('click', () => handleChoice('X'));
     oButton.addEventListener('click', () => handleChoice('O'));
+
+    easyButton.addEventListener('click', () => gameDifficulty = 'easy');
+    mediumButton.addEventListener('click', () => gameDifficulty = 'medium');
+    hardButton.addEventListener('click', () => gameDifficulty = 'hard');
 }
 
 // This is our UI checker - shows messages and disables board
@@ -113,6 +187,7 @@ function checkForWinner() {
     
     if (winner) {
         displayMessage(`winner is ${winner}`);
+        updateScore(winner);
         disableBoard();
         return true;
     }
@@ -120,6 +195,7 @@ function checkForWinner() {
     let isDraw = [...cells].every(cell => cell.textContent !== '');
     if (isDraw) {
         displayMessage(`It is a draw`);
+        updateScore('draw');
         disableBoard();
         return true;
     }
@@ -177,6 +253,14 @@ function minimax(board, depth, isMaximizing) {
     
     // Check for a tie
     if (!board.includes('')) return 0;
+
+    if(gameDifficulty === 'easy' && depth >= 1) {
+        return 0;
+    }
+
+    if(gameDifficulty === 'medium' && depth >= 2) {
+        return 0;
+    }
     
     if (isMaximizing) {
         let bestScore = -Infinity;
@@ -222,8 +306,6 @@ function checkWinnerForMinimax(board) {
 }
 
 function computerMove() {
-    let bestScore = -Infinity;
-    let bestMove = null;
 
     // Create a copy of the current board state
     let boardArray = Array(9).fill('');
@@ -231,7 +313,34 @@ function computerMove() {
         boardArray[index] = cell.textContent;
     });
 
-    // Find the best move
+    if(gameDifficulty === 'easy') {
+
+        if(Math.random() < 0.7) {
+            makeRandomMove(boardArray);
+        } else {
+            makeBestMove(boardArray);
+        }
+    } else if (gameDifficulty === 'medium') {
+
+        if(Math.random() < 0.3) {
+            makeRandomMove(boardArray);
+        } else {
+            makeBestMove();
+        }
+    } else {
+        makeBestMove(boardArray);
+    }
+
+    if (checkForWinner()) return;
+    switchTurn();
+    
+}
+
+function makeBestMove(boardArray) {
+
+    let bestScore = -Infinity;
+    let bestMove = null;
+
     for (let i = 0; i < boardArray.length; i++) {
         if (boardArray[i] === '') {
             boardArray[i] = computerSymbol;
@@ -246,12 +355,27 @@ function computerMove() {
     }
 
     if (bestMove !== null) {
-        let selectedCell = cells[bestMove];
-        selectedCell.textContent = computerSymbol;
+        cells[bestMove].textContent = computerSymbol;
+    }
+}
 
-        if (checkForWinner()) return;
+function makeRandomMove(boardArray) {
 
-        switchTurn();
+    let emptyCells = [];
+
+    for (let i=0; i<boardArray.length; i++) {
+        if(boardArray[i] === '') {
+            emptyCells.push(i);
+        }
+    }
+
+    if(emptyCells.length > 0) {
+
+        const randomIndex = Math.floor(Math.random() * emptyCells.length);
+
+        const cellToFill = emptyCells[randomIndex];
+
+        cells[cellToFill].textContent = computerSymbol;
     }
 }
 
