@@ -27,6 +27,15 @@
     }
 }
 
+@media only screen and (min-width: 414px) {
+    .message-container{
+        display: flex;
+        position:  absolute;
+        top: 80%;
+        left: 25%;
+    }
+}
+
 .hidden {
     display: none;
 }
