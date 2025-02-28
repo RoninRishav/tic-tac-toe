@@ -134,7 +134,6 @@ function resetGame(){
     restartButton.removeEventListener('click', initializeBoard);
     restartButton.addEventListener('click', () => {
         initializeBoard();
-        displayMessage('');
     }); 
 }
 
@@ -171,7 +170,6 @@ function checkForWinner() {
     const winner = getWinner();
     
     if (winner) {
-        displayMessage(`winner is ${winner}`);
         updateScore(winner);
         disableBoard();
         return true;
@@ -179,7 +177,6 @@ function checkForWinner() {
 
     let isDraw = [...cells].every(cell => cell.textContent !== '');
     if (isDraw) {
-        displayMessage(`It is a draw`);
         updateScore('draw');
         disableBoard();
         return true;
@@ -211,17 +208,6 @@ function getWinner() {
     return null;
 }
 
-function displayMessage(message) {
-    let messageContainer = document.querySelector('.message-container');
-
-    if(!messageContainer) {
-        messageContainer = document.createElement('div');
-        messageContainer.classList.add('message-container');
-        document.body.appendChild(messageContainer);
-    }
-
-    messageContainer.textContent = message; 
-}
 
 function disableBoard() {
     cells.forEach(cell => {
