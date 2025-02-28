@@ -33,19 +33,6 @@ body {
     color: var(--color-1);
 }
 
-.score-board-container {
-    display: flex;
-    justify-content: space-between;
-    width: 250px;
-    margin: 20px auto;
-    background-color: var(--bg-color-3);
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-    animation: fadeInScale 0.5s ease forwards;
-}
-
-
 .navbar {
     width: 100%;
     height: 70px;
@@ -57,6 +44,7 @@ h3{
     position: absolute;
     left: 15px;
     top: 1px;
+    cursor: pointer;
 }
 
 .board {
@@ -94,6 +82,7 @@ h3{
 
 .restart-button {
     display: block; /* Initially hidden */
+    margin: auto;
     margin-top: 90px;
     justify-self: center;
     background-color: var(--bg-color-6);
@@ -193,4 +182,16 @@ button:hover {
         opacity: 1;
         transform: scale(1);
     }
+}
+
+.score-board-container {
+    display: flex;
+    justify-content: space-between;
+    width: 250px;
+    margin: 20px auto;
+    background-color: var(--bg-color-3);
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    animation: fadeInScale 0.5s ease forwards;
 }

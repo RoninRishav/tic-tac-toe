@@ -1,6 +1,7 @@
 const board = document.querySelector('.board');
 let cells; // This will be updated when board is initialized
 const restartButton = document.querySelector('.js-restart-button');
+const startGameButton = document.querySelector('.js-start-button');
 let playerSymbol;
 let computerSymbol;
 
@@ -8,60 +9,7 @@ let currentPlayer;
 
 let playerScore = 0;
 let computerScore = 0;
-let ties = 0;
-
-function initializeScoreBoard() {
-    let scoreBoardContainer = document.querySelector('.score-board-container');
-
-    if(scoreBoardContainer) {
-        let playerLabel  = document.querySelector('.player-score .score-label');
-        let computerLabel = document.querySelector('.computer-score .score-label');
-
-        if(playerLabel && computerLabel) {
-            playerLabel.textContent = `Player (${playerSymbol || 'X'})`;
-            computerLabel.textContent = `Computer (${computerSymbol || 'O'})`;
-        }
-        return;
-    }
-
-    scoreBoardContainer = document.createElement('div');
-    scoreBoardContainer.classList.add('score-board-container');
-
-    scoreBoardContainer.innerHTML = `
-        <div class="player-score">
-            <span class="score-label">Player (${playerSymbol || 'X'})</span>
-            <span class="score-value" id="player-score">0</span>
-        </div>
-        <div class="ties">
-            <span class="score-label">Ties</span>
-            <span class="score-value" id="ties-score">0</span>
-        </div>
-        <div class="computer-score">
-            <span class="score-label">Computer (${computerSymbol || 'O'})</span>
-            <span class="score-value" id="computer-score">0</span>
-        </div>`;
-
-    if(board && board.parentNode) {
-        board.parentNode.insertBefore(scoreBoardContainer, board);
-    } else {
-        document.body.appendChild(scoreBoardContainer);
-    }
-}
-
-function updateScore(winner) {
-    let tiesScore = parseInt(document.querySelector('#ties-score').textContent);
-
-    if(winner === playerSymbol) {
-        playerScore++;
-        document.querySelector('#player-score').textContent = playerScore;
-    } else if (winner === computerSymbol) {
-        computerScore++; 
-        document.querySelector('#computer-score').textContent = computerScore;
-    } else {
-        tiesScore++;
-        document.querySelector('#ties-score').textContent = tiesScore;
-    }
-}
+let tiesScore = 0;
 
 function initializeBoard() {
     if (!board) {
@@ -118,9 +66,9 @@ function switchTurn() {
 }
 
 function startGame() {
-    let startGameButton = document.querySelector('.js-start-button');
     
     restartButton.classList.remove('restart-button');
+    restartButton.classList.add('hidden');
 
     startGameButton.addEventListener('click', () => {
         startGameButton.classList.add('hidden');
@@ -163,6 +111,58 @@ function playerChoice() {
 
     xButton.addEventListener('click', () => handleChoice('X'));
     oButton.addEventListener('click', () => handleChoice('O'));
+}
+
+function initializeScoreBoard() {
+    let scoreBoardContainer = document.querySelector('.score-board-container');
+
+    if(scoreBoardContainer) {
+        let playerLabel  = document.querySelector('.player-score .score-label');
+        let computerLabel = document.querySelector('.computer-score .score-label');
+
+        if(playerLabel && computerLabel) {
+            playerLabel.textContent = `Player (${playerSymbol || 'X'})`;
+            computerLabel.textContent = `Computer (${computerSymbol || 'O'})`;
+        }
+        return;
+    }
+
+    scoreBoardContainer = document.createElement('div');
+    scoreBoardContainer.classList.add('score-board-container');
+
+    scoreBoardContainer.innerHTML = `
+        <div class="player-score">
+            <span class="score-label">Player (${playerSymbol || 'X'})</span>
+            <span class="score-value" id="player-score">0</span>
+        </div>
+        <div class="ties">
+            <span class="score-label">Ties</span>
+            <span class="score-value" id="ties-score">0</span>
+        </div>
+        <div class="computer-score">
+            <span class="score-label">Computer (${computerSymbol || 'O'})</span>
+            <span class="score-value" id="computer-score">0</span>
+        </div>`;
+
+    if(board && board.parentNode) {
+        board.parentNode.insertBefore(scoreBoardContainer, board);
+    } else {
+        document.body.appendChild(scoreBoardContainer);
+    }
+}
+
+function updateScore(winner) {
+
+    if(winner === playerSymbol) {
+        playerScore++;
+        document.querySelector('#player-score').textContent = playerScore;
+    } else if (winner === computerSymbol) {
+        computerScore++; 
+        document.querySelector('#computer-score').textContent = computerScore;
+    } else {
+        tiesScore++;
+        document.querySelector('#ties-score').textContent = tiesScore;
+    }
 }
 
 // This is our UI checker - shows messages and disables board
@@ -302,7 +302,32 @@ function computerMove() {
     }
 }
 
+function resetScoreBoard() {
+
+    playerScore = 0; // Reset the actual global variable
+    computerScore = 0;
+    tiesScore = 0;
+
+    document.querySelector('#player-score').textContent = playerScore;
+    document.querySelector('#computer-score').textContent = computerScore;
+    document.querySelector('#ties-score').textContent = tiesScore;
+}
+
+function handleHeadingClick() {
+    let heading = document.querySelector('#nav-heading');
+
+    heading.addEventListener('click', () => {
+        board.classList.remove('board');
+        board.classList.add('hidden');
+        resetScoreBoard();
+        playerChoice();
+        startGame();
+        resetGame();
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     startGame();
     resetGame();
+    handleHeadingClick();
 });
