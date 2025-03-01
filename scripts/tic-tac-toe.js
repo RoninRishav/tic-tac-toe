@@ -2,6 +2,7 @@ const board = document.querySelector('.board');
 let cells; // This will be updated when board is initialized
 const restartButton = document.querySelector('.js-restart-button');
 const startGameButton = document.querySelector('.js-start-button');
+
 let playerSymbol;
 let computerSymbol;
 
@@ -10,6 +11,8 @@ let currentPlayer;
 let playerScore = 0;
 let computerScore = 0;
 let tiesScore = 0;
+
+let playerTurn = true;
 
 function initializeBoard() {
     if (!board) {
@@ -39,6 +42,8 @@ function initializeBoard() {
     board.classList.add('board');
     restartButton.classList.remove('hidden'); // Show restart button
     restartButton.classList.add('restart-button');
+
+    assignFirstTurn();
 }
 
 function setUpEventListeners() {
@@ -48,11 +53,16 @@ function setUpEventListeners() {
 }
 
 function handleMove(cell) {
-    if(cell.textContent !== '') return;
+    if(!playerTurn || cell.textContent !== '') return;
 
-    cell.textContent = currentPlayer;
+    if(cell.textContent === '') {
+        cell.textContent = currentPlayer;
 
-    if (checkForWinner()) return;
+        if (checkForWinner()) return;
+
+    }
+
+    playerTurn = false;
 
     switchTurn();
 
@@ -82,6 +92,7 @@ function resetGame(){
     restartButton.removeEventListener('click', initializeBoard);
     restartButton.addEventListener('click', () => {
         initializeBoard();
+        playerTurn = true;
     }); 
 }
 
@@ -271,6 +282,7 @@ function checkWinnerForMinimax(board) {
 function computerMove() {
     let bestScore = -Infinity;
     let bestMove = null;
+    
 
     // Create a copy of the current board state
     let boardArray = Array(9).fill('');
@@ -300,6 +312,8 @@ function computerMove() {
 
         switchTurn();
     }
+
+    playerTurn = true;
 }
 
 function resetScoreBoard() {
@@ -324,6 +338,17 @@ function handleHeadingClick() {
         startGame();
         resetGame();
     });
+}
+
+function assignFirstTurn() {
+    if(playerSymbol === 'X') {
+        // the first turn will be of player
+        currentPlayer = playerSymbol;
+    } else {
+        currentPlayer = computerSymbol;
+        setTimeout(computerMove, 500);
+        // the first turn will be of computer
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
