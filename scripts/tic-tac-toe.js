@@ -2,6 +2,7 @@ const board = document.querySelector('.board');
 let cells; // This will be updated when board is initialized
 const restartButton = document.querySelector('.js-restart-button');
 const startGameButton = document.querySelector('.js-start-button');
+const biListButton = document.querySelector('.bi-list');
 
 let playerSymbol;
 let computerSymbol;
@@ -351,8 +352,27 @@ function assignFirstTurn() {
     }
 }
 
+function verticalNav() {
+    let verticalNavDiv = document.querySelector('.vertical-nav-section');
+
+    biListButton.addEventListener('click', (event) => {
+        verticalNavDiv.classList.toggle('hidden');
+        biListButton.classList.add('hidden'); 
+        event.stopPropagation();
+    });
+
+    document.body.addEventListener('click', (event) => {
+        if(!verticalNavDiv.contains(event.target) && !biListButton.contains(event.target)) {
+            verticalNavDiv.classList.add('hidden');
+            biListButton.classList.remove('hidden');
+        }
+    })
+    
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     startGame();
     resetGame();
     handleHeadingClick();
+    verticalNav();
 });

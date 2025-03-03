@@ -217,3 +217,32 @@ button:hover {
     animation: fadeInScale 0.5s ease forwards;
 }
 
+ul {
+    list-style-type: none;
+    cursor: pointer;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    justify-content: space-between;
+    align-items: center;
+    flex-flow: column;
+}
+
+
+.vertical-nav-section {
+    position: fixed;
+    top: 70px; /* Start hidden off-screen */
+    width: 250px; /* Adjust as needed */
+    height: 100vh;
+    background: #333;
+    animation: fadeInScale ease forwards;
+    z-index: 1;
+}
+
+.list {
+    padding: 15px;
+}
+
+.list:hover{
+    background-color: #EF476F;
+}
