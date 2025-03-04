@@ -4,16 +4,14 @@ const restartButton = document.querySelector('.js-restart-button');
 const startGameButton = document.querySelector('.js-start-button');
 const biListButton = document.querySelector('.bi-list');
 
-let playerSymbol;
-let computerSymbol;
+let player1Symbol;
+let player2Symbol;
 
 let currentPlayer;
 
-let playerScore = 0;
-let computerScore = 0;
+let player1Score = 0;
+let player2Score = 0;
 let tiesScore = 0;
-
-let playerTurn = true;
 
 function initializeBoard() {
     if (!board) {
@@ -35,16 +33,22 @@ function initializeBoard() {
     // Update cells reference after creating new cells
     cells = document.querySelectorAll('.cell');
     
-    currentPlayer = localStorage.getItem('playerChoice') || 'X';
+    // Use player1Symbol as initial player instead of from localStorage
+    currentPlayer = player1Symbol || 'X';
 
+    // Remove any existing event listeners
+    cells.forEach(cell => {
+        cell.replaceWith(cell.cloneNode(true));
+    });
+    
+    // Get updated references and add new listeners
+    cells = document.querySelectorAll('.cell');
     setUpEventListeners();
 
     board.classList.remove('hidden'); // Show board
     board.classList.add('board');
     restartButton.classList.remove('hidden'); // Show restart button
     restartButton.classList.add('restart-button');
-
-    assignFirstTurn();
 }
 
 function setUpEventListeners() {
@@ -54,22 +58,13 @@ function setUpEventListeners() {
 }
 
 function handleMove(cell) {
-    if(!playerTurn || cell.textContent !== '') return;
+    if(cell.textContent !== '') return;
 
-    if(cell.textContent === '') {
-        cell.textContent = currentPlayer;
+    cell.textContent = currentPlayer;
 
-        if (checkForWinner()) return;
-
-    }
-
-    playerTurn = false;
-
+    if(checkForWinner()) return;
+    
     switchTurn();
-
-    if(currentPlayer === computerSymbol) {
-        setTimeout(computerMove, 500);
-    }
 }
 
 function switchTurn() {
@@ -77,13 +72,18 @@ function switchTurn() {
 }
 
 function startGame() {
-    
     restartButton.classList.remove('restart-button');
     restartButton.classList.add('hidden');
 
-    startGameButton.addEventListener('click', () => {
-        startGameButton.classList.add('hidden');
-        startGameButton.classList.remove('start-button');
+    // Remove any existing event listeners to prevent duplicates
+    startGameButton.replaceWith(startGameButton.cloneNode(true));
+
+    // Get updated reference
+    const newStartButton = document.querySelector('.js-start-button');
+    
+    newStartButton.addEventListener('click', () => {
+        newStartButton.classList.add('hidden');
+        newStartButton.classList.remove('start-button');
         board.classList.remove('board');
         playerChoice();
     });
@@ -93,12 +93,17 @@ function resetGame(){
     restartButton.removeEventListener('click', initializeBoard);
     restartButton.addEventListener('click', () => {
         initializeBoard();
-        playerTurn = true;
     }); 
 }
 
+
+
 function playerChoice() {
     let container = document.querySelector('.js-choose-container');
+    if (!container) {
+        console.error('Error: Player choice container not found!');
+        return;
+    }
 
     let html = `
         <p class="ask-player">Choose Between X or O</p>
@@ -112,29 +117,36 @@ function playerChoice() {
     let xButton = document.querySelector('.js-x-button');
     let oButton = document.querySelector('.js-o-button');
 
-    function handleChoice(choice) {
-        playerSymbol = choice;
-        computerSymbol = (choice === 'X') ? 'O' : 'X';
+    // Remove any existing listeners
+    if (xButton) xButton.replaceWith(xButton.cloneNode(true));
+    if (oButton) oButton.replaceWith(oButton.cloneNode(true));
+    
+    // Get updated references
+    xButton = document.querySelector('.js-x-button');
+    oButton = document.querySelector('.js-o-button');
 
-        localStorage.setItem('playerChoice', playerSymbol);
+    function handleChoice(choice) {
+        player1Symbol = choice;
+        player2Symbol = (choice === 'X') ? 'O' : 'X';
+
         container.classList.add('hidden');
         initializeBoard();
     }
 
-    xButton.addEventListener('click', () => handleChoice('X'));
-    oButton.addEventListener('click', () => handleChoice('O'));
+    if (xButton) xButton.addEventListener('click', () => handleChoice('X'));
+    if (oButton) oButton.addEventListener('click', () => handleChoice('O'));
 }
 
 function initializeScoreBoard() {
     let scoreBoardContainer = document.querySelector('.score-board-container');
 
     if(scoreBoardContainer) {
-        let playerLabel  = document.querySelector('.player-score .score-label');
-        let computerLabel = document.querySelector('.computer-score .score-label');
+        let player1Label = document.querySelector('.player-1-score .score-label');
+        let player2Label = document.querySelector('.player-2-score .score-label');
 
-        if(playerLabel && computerLabel) {
-            playerLabel.textContent = `Player (${playerSymbol || 'X'})`;
-            computerLabel.textContent = `Computer (${computerSymbol || 'O'})`;
+        if(player1Label && player2Label) {
+            player1Label.textContent = `Player (${player1Symbol || 'X'})`;
+            player2Label.textContent = `Player (${player2Symbol || 'O'})`;
         }
         return;
     }
@@ -143,17 +155,17 @@ function initializeScoreBoard() {
     scoreBoardContainer.classList.add('score-board-container');
 
     scoreBoardContainer.innerHTML = `
-        <div class="player-score">
-            <span class="score-label">Player (${playerSymbol || 'X'})</span>
-            <span class="score-value" id="player-score">0</span>
+        <div class="player-1-score">
+            <span class="score-label">Player (${player1Symbol || 'X'})</span>
+            <span class="score-value" id="player-1-score">0</span>
         </div>
         <div class="ties">
             <span class="score-label">Ties</span>
             <span class="score-value" id="ties-score">0</span>
         </div>
-        <div class="computer-score">
-            <span class="score-label">Computer (${computerSymbol || 'O'})</span>
-            <span class="score-value" id="computer-score">0</span>
+        <div class="player-2-score">
+            <span class="score-label">Player (${player2Symbol || 'O'})</span>
+            <span class="score-value" id="player-2-score">0</span>
         </div>`;
 
     if(board && board.parentNode) {
@@ -164,16 +176,24 @@ function initializeScoreBoard() {
 }
 
 function updateScore(winner) {
-
-    if(winner === playerSymbol) {
-        playerScore++;
-        document.querySelector('#player-score').textContent = playerScore;
-    } else if (winner === computerSymbol) {
-        computerScore++; 
-        document.querySelector('#computer-score').textContent = computerScore;
+    if(winner === player1Symbol) {
+        player1Score++;
+        const scoreElement = document.querySelector('#player-1-score');
+        if (scoreElement) {
+            scoreElement.textContent = player1Score;
+        }
+    } else if (winner === player2Symbol) {
+        player2Score++; 
+        const scoreElement = document.querySelector('#player-2-score');
+        if (scoreElement) {
+            scoreElement.textContent = player2Score;
+        }
     } else {
         tiesScore++;
-        document.querySelector('#ties-score').textContent = tiesScore;
+        const scoreElement = document.querySelector('#ties-score');
+        if (scoreElement) {
+            scoreElement.textContent = tiesScore;
+        }
     }
 }
 
@@ -184,6 +204,10 @@ function checkForWinner() {
     if (winner) {
         updateScore(winner);
         disableBoard();
+        
+        // Add visual indication for winning cells
+        highlightWinningCells(winner);
+        
         return true;
     }
 
@@ -197,8 +221,7 @@ function checkForWinner() {
     return false;
 }
 
-// This is our logical checker - returns the winner symbol or null
-function getWinner() {
+function highlightWinningCells(winner) {
     const winningCombinations = [
         [0,1,2],[3,4,5],[6,7,8],
         [0,3,6],[1,4,7],[2,5,8],
@@ -212,57 +235,21 @@ function getWinner() {
         let cellB = cells[b].textContent;
         let cellC = cells[c].textContent;
 
-        if (cellA !== '' && cellA === cellB && cellB === cellC) {
-            return cellA;
+        if (cellA === winner && cellA === cellB && cellB === cellC) {
+            // Highlight winning cells
+            cells[a].style.backgroundColor = '#27ae60';
+            cells[b].style.backgroundColor = '#27ae60';
+            cells[c].style.backgroundColor = '#27ae60';
+            cells[a].style.color = 'white';
+            cells[b].style.color = 'white';
+            cells[c].style.color = 'white';
+            break;
         }
     }
-    
-    return null;
 }
 
-
-function disableBoard() {
-    cells.forEach(cell => {
-        cell.style.pointerEvents = 'none';
-    });
-}
-
-function minimax(board, depth, isMaximizing) {
-    // Check if there's a winner
-    const winner = checkWinnerForMinimax(board);
-    
-    if (winner === computerSymbol) return 10 - depth;
-    if (winner === playerSymbol) return depth - 10;
-    
-    // Check for a tie
-    if (!board.includes('')) return 0;
-    
-    if (isMaximizing) {
-        let bestScore = -Infinity;
-        for (let i = 0; i < board.length; i++) {
-            if (board[i] === '') {
-                board[i] = computerSymbol;
-                let score = minimax(board, depth + 1, false);
-                board[i] = '';
-                bestScore = Math.max(score, bestScore);
-            }
-        }
-        return bestScore;
-    } else {
-        let bestScore = Infinity;
-        for (let i = 0; i < board.length; i++) {
-            if (board[i] === '') {
-                board[i] = playerSymbol;
-                let score = minimax(board, depth + 1, true);
-                board[i] = '';
-                bestScore = Math.min(score, bestScore);
-            }
-        }
-        return bestScore;
-    }
-}
-
-function checkWinnerForMinimax(board) {
+// This is our logical checker - returns the winner symbol or null
+function getWinner() {
     const winningCombinations = [
         [0,1,2],[3,4,5],[6,7,8],
         [0,3,6],[1,4,7],[2,5,8],
@@ -272,102 +259,93 @@ function checkWinnerForMinimax(board) {
     for (let combination of winningCombinations) {
         let [a, b, c] = combination;
 
-        if (board[a] !== '' && board[a] === board[b] && board[b] === board[c]) {
-            return board[a];
+        if (!cells || !cells[a] || !cells[b] || !cells[c]) {
+            continue; // Skip if any cell is undefined
+        }
+
+        let cellA = cells[a].textContent;
+        let cellB = cells[b].textContent;
+        let cellC = cells[c].textContent;
+
+        if (cellA !== '' && cellA === cellB && cellB === cellC) {
+            return cellA;
         }
     }
     
     return null;
 }
 
-function computerMove() {
-    let bestScore = -Infinity;
-    let bestMove = null;
+function disableBoard() {
+    if (!cells) return;
     
-
-    // Create a copy of the current board state
-    let boardArray = Array(9).fill('');
-    cells.forEach((cell, index) => {
-        boardArray[index] = cell.textContent;
+    cells.forEach(cell => {
+        cell.style.pointerEvents = 'none';
     });
-
-    // Find the best move
-    for (let i = 0; i < boardArray.length; i++) {
-        if (boardArray[i] === '') {
-            boardArray[i] = computerSymbol;
-            let score = minimax(boardArray, 0, false);
-            boardArray[i] = '';
-            
-            if (score > bestScore) {
-                bestScore = score;
-                bestMove = i;
-            }
-        }
-    }
-
-    if (bestMove !== null) {
-        let selectedCell = cells[bestMove];
-        selectedCell.textContent = computerSymbol;
-
-        if (checkForWinner()) return;
-
-        switchTurn();
-    }
-
-    playerTurn = true;
 }
 
 function resetScoreBoard() {
-
-    playerScore = 0; // Reset the actual global variable
-    computerScore = 0;
+    player1Score = 0;
+    player2Score = 0;
     tiesScore = 0;
 
-    document.querySelector('#player-score').textContent = playerScore;
-    document.querySelector('#computer-score').textContent = computerScore;
-    document.querySelector('#ties-score').textContent = tiesScore;
+    const player1ScoreElement = document.querySelector('#player-1-score');
+    const player2ScoreElement = document.querySelector('#player-2-score');
+    const tiesScoreElement = document.querySelector('#ties-score');
+    
+    if (player1ScoreElement) player1ScoreElement.textContent = player1Score;
+    if (player2ScoreElement) player2ScoreElement.textContent = player2Score;
+    if (tiesScoreElement) tiesScoreElement.textContent = tiesScore;
 }
 
 function handleHeadingClick() {
     let heading = document.querySelector('#nav-heading');
+    if (!heading) return;
 
+    // Create a new element to replace the old one (removing all listeners)
+    const newHeading = heading.cloneNode(true);
+    heading.parentNode.replaceChild(newHeading, heading);
+    
+    // Update the reference
+    heading = document.querySelector('#nav-heading');
+    
     heading.addEventListener('click', () => {
-        board.classList.remove('board');
-        board.classList.add('hidden');
+        if (board) {
+            board.classList.remove('board');
+            board.classList.add('hidden');
+        }
         resetScoreBoard();
         playerChoice();
-        startGame();
-        resetGame();
     });
-}
-
-function assignFirstTurn() {
-    if(playerSymbol === 'X') {
-        // the first turn will be of player
-        currentPlayer = playerSymbol;
-    } else {
-        currentPlayer = computerSymbol;
-        setTimeout(computerMove, 500);
-        // the first turn will be of computer
-    }
 }
 
 function verticalNav() {
     let verticalNavDiv = document.querySelector('.vertical-nav-section');
+    if (!verticalNavDiv || !biListButton) return;
 
-    biListButton.addEventListener('click', (event) => {
+    // Clean up existing listeners
+    const newBiListButton = biListButton.cloneNode(true);
+    biListButton.parentNode.replaceChild(newBiListButton, biListButton);
+    
+    // Update the reference
+    const updatedBiListButton = document.querySelector('.bi-list');
+    
+    updatedBiListButton.addEventListener('click', (event) => {
         verticalNavDiv.classList.toggle('hidden');
-        biListButton.classList.add('hidden'); 
+        updatedBiListButton.classList.add('hidden'); 
         event.stopPropagation();
     });
 
-    document.body.addEventListener('click', (event) => {
-        if(!verticalNavDiv.contains(event.target) && !biListButton.contains(event.target)) {
+    // Use a named function so we can remove it if needed
+    const handleClickOutside = (event) => {
+        if(!verticalNavDiv.contains(event.target) && !updatedBiListButton.contains(event.target)) {
             verticalNavDiv.classList.add('hidden');
-            biListButton.classList.remove('hidden');
+            updatedBiListButton.classList.remove('hidden');
         }
-    })
+    };
     
+    // Remove any existing listener and add a new one
+    document.body.removeEventListener('click', handleClickOutside);
+    document.body.addEventListener('click', handleClickOutside);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
